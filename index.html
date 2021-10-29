@@ -1,0 +1,146 @@
+<html>
+
+<head>
+    <title>KeroOrgs Player</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #d4d0c8;
+        }
+
+        body,
+        html {
+            height: 100%;
+            margin: 0;
+            padding: 0
+        }
+
+        #toolbar {
+            position: absolute;
+            flex-wrap: nowrap;
+            height: 40px;
+            display: flex;
+            top: 0;
+            left: 0;
+            right: 0;
+        }
+
+        #toolbar select {
+            min-width: 0;
+            max-width: 256px;
+            flex: 0 1 auto;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 64px;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="toolbar">
+        <select id="songs"></select>
+        <button onclick="playOrg()">Play</button>
+        <button onclick="stopOrg()">Stop</button>
+
+        <div style="margin-left: 0.5rem;">
+            Orginal arrangement by Daisuke Amaya / Studio Pixel. Organya transcription by Alula.<br/>
+
+            You can freely use those songs in your mods, you don't have to credit me but it would be nice if you did.
+        </div>
+    </div>
+    <div id="canvas-container">
+        <canvas id="org-canvas"></canvas>
+    </div>
+
+    <!-- increment before each deploy -->
+    <script src="player/organya.js?cache_bust=6"></script>
+    <script src="player/organya-ui.js?cache_bust=6"></script>
+    <script>
+        (() => {
+            const songs = `kb_stg01a.org
+kb_stg02a.org
+kb_stg03a.org
+kb_stg04a.org
+kb_stg05a.org
+kb_stg06a.org
+kb_dataslot.org
+kb_enrai.org
+kb_store.org
+kb_strange.org
+kb_building.org
+kb_hospital_a.org
+kb_room_a.org
+kb_shop_a.org
+kb_station_a.org
+kb_station_b.org
+kb_station_c.org
+kb_reception.org
+kb_boss_a.org
+kb_boss_b.org
+kb_boss_c.org
+kb_boss_last.org
+kb_boss_zombie.org
+kb_credit.org
+kb_curtainrise.org
+kb_darkshop.org
+kb_fanf_finish.org
+kb_fanf_little.org
+kb_fanf_safe.org
+kb_fanf_win.org
+kb_newitem.org
+kb_x.org
+kb_y.org`.split("\n");
+
+            const songListEl = document.getElementById("songs");
+            for (let song of songs) {
+                song = song.trim();
+                const opt = document.createElement("option");
+                opt.value = "bgm/" + song;
+                opt.textContent = song;
+
+                songListEl.appendChild(opt);
+            }
+
+            const canvasContainer = document.getElementById("canvas-container");
+            const orgCanvas = document.getElementById("org-canvas");
+            orgCanvas.width = canvasContainer.clientWidth;
+            orgCanvas.height = canvasContainer.clientHeight;
+            const ui = new OrganyaUI(orgCanvas);
+
+            window.addEventListener("resize", () => {
+                orgCanvas.width = canvasContainer.clientWidth;
+                orgCanvas.height = canvasContainer.clientHeight;
+                ui.draw();
+            })
+
+            let currentOrg = null;
+            window.stopOrg = () => {
+                if (currentOrg != null) {
+                    currentOrg.stop();
+                    currentOrg = null;
+                }
+            }
+
+            window.playOrg = async () => {
+                stopOrg();
+
+                console.log("fetching song...");
+                const res = await fetch(songListEl.options[songListEl.selectedIndex].value);
+                const data = await res.arrayBuffer();
+                await initOrganya();
+
+                currentOrg = new Organya(data);
+                ui.setOrganya(currentOrg);
+                currentOrg.play();
+            }
+        })();
+    </script>
+</body>
+
+</html>
